@@ -66,6 +66,8 @@ def main():
             name = img_tag[0]['alt']
             img_src = img_tag[0]['src']
             
+            anime = None
+            
             print(f'{c}. {name} - {img_src}')
             write_to_json(name, img_src)
             
