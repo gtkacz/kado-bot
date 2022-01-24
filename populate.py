@@ -1,4 +1,5 @@
 import re, logging, json
+from turtle import width
 from bs4 import BeautifulSoup
 from pathlib import Path
 from selenium import webdriver
@@ -22,8 +23,8 @@ def tag_cleanup(html, c_name = False):
     
     return string
 
-def write_to_json(name, img_src, edition=None):
-    data_raw = {name: img_src}
+def write_to_json(name, anime, img_src):
+    data_raw = {f'{name} -> {anime}': img_src}
     
     with open('characters.json', 'r+') as file:
         data = json.load(file)
@@ -66,10 +67,13 @@ def main():
             name = img_tag[0]['alt']
             img_src = img_tag[0]['src']
             
-            anime = None
+            anime_div = soup.find_all('td', class_ = 'borderClass')[0]
+            anime_table = anime_div.find_all('table', width = True, cellspacing = True, cellpadding = True, border = 0)[0]
+            anime = tag_cleanup(anime_table.find_all('td', class_ = 'borderClass')[1])
+            anime = anime.partition('add')[0]
             
-            print(f'{c}. {name} - {img_src}')
-            write_to_json(name, img_src)
+            print(f'{c}. {name} - {anime} - {img_src}')
+            write_to_json(name, anime, img_src)
             
             c+=1
             
