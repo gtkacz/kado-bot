@@ -1,4 +1,4 @@
-import re, logging
+import re, logging, json
 from bs4 import BeautifulSoup
 from pathlib import Path
 from selenium import webdriver
@@ -17,16 +17,19 @@ def tag_cleanup(html, c_name = False):
     string = string.replace('\t', '')
     
     if c_name:
-        string = re.sub(r'[^\x00-\x7f]',r'', string)
+        string = re.sub(r'[^\x00-\x7f]', r'', string)
         #string = string.split(" ")[:-1]
     
     return string
 
-def attr_from_tag(string, tag):
-    soup = BeautifulSoup(string, 'html.parser')
-    result = [tag.attrs for tag in soup.findAll(tag)]
+def write_to_json(name, img_src, edition=None):
+    data_raw = {name: img_src}
     
-    return result
+    with open('characters.json', 'r+') as file:
+        data = json.load(file)
+        data.update(data_raw)
+        file.seek(0)
+        json.dump(data, file)
 
 def main():
     CUR_DIR = Path(__file__).parent
@@ -54,16 +57,17 @@ def main():
         
         try:
             browser.get(char_url)
-            WebDriverWait(browser, 10).until(expected_conditions.presence_of_element_located((By.CLASS_NAME, 'normal_header')))
+            WebDriverWait(browser, 5).until(expected_conditions.presence_of_element_located((By.CLASS_NAME, 'lazyloaded')))
             source = browser.page_source
             
             soup = BeautifulSoup(source, 'html.parser')
             
-            #name = tag_cleanup(soup.find_all('h2', class_ = 'normal_header')[0], True)
-            img_src = soup.find_all('img', class_ = 'lazyloaded', src=True, alt=True)
-            #print(c, name)
-            for i in img_src:
-                print(c, i['alt'], i['src'])
+            img_tag = soup.find_all('img', class_ = 'lazyloaded', src = True, alt = True)
+            name = img_tag[0]['alt']
+            img_src = img_tag[0]['src']
+            
+            print(f'{c}. {name} - {img_src}')
+            write_to_json(name, img_src)
             
             c+=1
             
@@ -81,10 +85,11 @@ def main():
                 
                 browser.quit()
             finally:
-                root = Tk()
-                root.withdraw()
-                messagebox.showerror('Timeout', 'MAL took too long to respond, try again.')
-                root.destroy()
+                # root = Tk()
+                # root.withdraw()
+                # messagebox.showerror('Timeout', 'MAL took too long to respond, try again.')
+                # root.destroy()
+                pass
 
 if __name__ == '__main__':
     main()
